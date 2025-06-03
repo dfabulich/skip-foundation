@@ -381,6 +381,7 @@ class TestUserDefaults : XCTestCase {
         let defaults = UserDefaults.standard
         defaults.set(Float(10.56), forKey: "floatkey")
         XCTAssertEqual(Float(10.56), defaults.float(forKey: "floatkey"))
+        XCTAssertEqual(Float(10.56), defaults.object(forKey: "floatkey") as! Float)
     }
 
     func test_doublePrecision() {
@@ -390,6 +391,24 @@ class TestUserDefaults : XCTestCase {
 
         defaults.set(761602013.452, forKey: "doublekey2")
         XCTAssertEqual(761602013.452, defaults.double(forKey: "doublekey2"))
+        XCTAssertEqual(761602013.452, defaults.object(forKey: "doublekey2") as! Double)
+        
+        let almostThreeTenthsDouble = 0.1 + 0.2
+        defaults.set(almostThreeTenthsDouble, forKey: "doublekey3")
+        XCTAssertEqual(almostThreeTenthsDouble, defaults.double(forKey: "doublekey3"))
+        
+        defaults.set(Float(10.56), forKey: "floatkey1")
+        XCTAssertEqual(Float(10.56), defaults.float(forKey: "floatkey1"))
+        XCTAssertEqual(Float(10.56), defaults.object(forKey: "floatkey1") as! Float)
+        
+        let almostThreeTenthsFloat = Float(0.1) + Float(0.2)
+        defaults.set(almostThreeTenthsFloat, forKey: "floatkey2")
+        XCTAssertEqual(almostThreeTenthsFloat, defaults.float(forKey: "floatkey2"))
+        XCTAssertEqual(almostThreeTenthsFloat, defaults.object(forKey: "floatkey2") as! Float)
+        
+        defaults.set(Float(16777215.0), forKey: "floatkey3")
+        XCTAssertEqual(Float(16777215.0), defaults.float(forKey: "floatkey3"))
+        XCTAssertEqual(Float(16777215.0), defaults.object(forKey: "floatkey3") as! Float)
     }
 
     func test_nilRemovesValue() {

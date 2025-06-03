@@ -43,7 +43,7 @@ public class UserDefaults: KotlinConverting<android.content.SharedPreferences> {
 
     public func `set`(_ value: Float, forKey defaultName: String) {
         let prefs = platformValue.edit()
-        prefs.putInt(defaultName, value.toRawBits())
+        prefs.putFloat(defaultName, value)
         prefs.apply()
     }
 
@@ -56,6 +56,7 @@ public class UserDefaults: KotlinConverting<android.content.SharedPreferences> {
     public func `set`(_ value: Double, forKey defaultName: String) {
         let prefs = platformValue.edit()
         prefs.putLong(defaultName, value.toRawBits())
+        prefs.putBoolean("\(ieee754keyPrefix)\(defaultName)", true)
         prefs.apply()
     }
 
@@ -81,6 +82,7 @@ public class UserDefaults: KotlinConverting<android.content.SharedPreferences> {
             prefs.putBoolean(defaultName, v)
         } else if let v = value as? Double {
             prefs.putLong(defaultName, value.toRawBits())
+            prefs.putBoolean("\(ieee754keyPrefix)\(defaultName)", true)
         } else if let v = value as? Number {
             prefs.putString(defaultName, v.toString())
         } else if let v = value as? String {
@@ -105,15 +107,25 @@ public class UserDefaults: KotlinConverting<android.content.SharedPreferences> {
 
     public func object(forKey defaultName: String) -> Any? {
         let value = platformValue.getAll()[defaultName] ?? registrationDictionary[defaultName] ?? nil
-        return fromStoredRepresentation(value)
+        return fromStoredRepresentation(value, key: defaultName)
     }
 
-    private func fromStoredRepresentation(_ value: Any?) -> Any? {
+    private func fromStoredRepresentation(_ value: Any?, key: String) -> Any? {
         guard let string = value as? String else {
-            if let d = value as? Double {
-                return removeDoubleSlop(d)
-            } else if let f = value as? Float {
-                return removeFloatSlop(f)
+            if let f = value as? Float {
+                return f
+            } else if let i = value as? Int {
+                if platformValue.getBoolean("\(ieee754keyPrefix)\(key)", false) {
+                    return Float.fromBits(i)
+                } else {
+                    return value
+                }
+            } else if let l = value as? Long {
+                if platformValue.getBoolean("\(ieee754keyPrefix)\(key)", false) {
+                    return Double.fromBits(l)
+                } else {
+                    return value
+                }
             } else {
                 return value
             }
@@ -167,7 +179,12 @@ public class UserDefaults: KotlinConverting<android.content.SharedPreferences> {
         guard let value = object(forKey: defaultName) else {
             return 0.0
         }
-        if let number = value as? Number {
+        if let double = value as? Double {
+            return double
+        } else if let float = value as? Float {
+            return removeDoubleSlop(float.toDouble())
+        } else if let number = value as? Number {
+            // Number could be stored before #54 was fixed
             if let double = number as? Long {
                 return Double.fromBits(double)
             } else {
@@ -201,9 +218,12 @@ public class UserDefaults: KotlinConverting<android.content.SharedPreferences> {
         guard let value = object(forKey: defaultName) else {
             return Float(0.0)
         }
-        if let number = value as? Number {
-            if let float = number as? Int {
-                return Float.fromBits(float)
+        if let float = value as? Float {
+            return float
+        } else if let number = value as? Number {
+            // Number could be stored before #54 was fixed
+            if let i = number as? Int {
+                return Float.fromBits(i)
             } else {
                 return removeFloatSlop(number.toFloat())
             }
@@ -262,7 +282,7 @@ public class UserDefaults: KotlinConverting<android.content.SharedPreferences> {
         let map = platformValue.getAll()
         var dict = Dictionary<String, Any>()
         for entry in map {
-            if let value = fromStoredRepresentation(entry.value) {
+            if let value = fromStoredRepresentation(entry.value, key: entry.key) {
                 dict[entry.key] = value
             }
         }
@@ -352,6 +372,7 @@ public class UserDefaults: KotlinConverting<android.content.SharedPreferences> {
 
     private static let dataStringPrefix = "__data__:"
     private static let dateStringPrefix = "__date__:"
+    private static let ieee754keyPrefix = "__ieee754:"
     private static let dateFormatter = ISO8601DateFormatter()
 
     private func removeFloatSlop(_ value: Float) -> Float {
