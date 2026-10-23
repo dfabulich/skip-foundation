@@ -241,7 +241,7 @@ public struct URLQueryItem : Hashable, Equatable, Sendable {
     public var name: String
     public var value: String?
 
-    static func from(_ string: String?) -> [URLQueryItem]? {
+    public static func from(_ string: String?) -> [URLQueryItem]? {
         guard let string, !string.isEmpty else {
             return nil
         }
@@ -260,7 +260,7 @@ public struct URLQueryItem : Hashable, Equatable, Sendable {
         }
     }
 
-    static func queryString(from items: [URLQueryItem]?) -> String? {
+    public static func queryString(from items: [URLQueryItem]?) -> String? {
         guard let items, !items.isEmpty else {
             return nil
         }

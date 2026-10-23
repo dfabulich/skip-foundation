@@ -537,8 +537,14 @@ class TestURL : XCTestCase {
         try fileManager.createDirectory(atPath: TestURL.gBaseTemporaryDirectoryPath, withIntermediateDirectories: true)
         defer { try? fileManager.removeItem(atPath: TestURL.gBaseTemporaryDirectoryPath) }
 
-        try Data("test".utf8).write(to: URL(fileURLWithPath: TestURL.gFileExistsPath))
-        try fileManager.createDirectory(atPath: TestURL.gDirectoryExistsPath, withIntermediateDirectories: false)
+        let fileExistsPath = URL(fileURLWithPath: TestURL.gBaseTemporaryDirectoryPath, isDirectory: true)
+            .appendingPathComponent(TestURL.gFileExistsName).path
+        let directoryExistsPath = URL(fileURLWithPath: TestURL.gBaseTemporaryDirectoryPath, isDirectory: true)
+            .appendingPathComponent(TestURL.gDirectoryExistsName).path
+        let fileDoesNotExistPath = URL(fileURLWithPath: TestURL.gBaseTemporaryDirectoryPath, isDirectory: true)
+            .appendingPathComponent(TestURL.gFileDoesNotExistName).path
+        try Data("test".utf8).write(to: URL(fileURLWithPath: fileExistsPath), options: .atomic)
+        try fileManager.createDirectory(atPath: directoryExistsPath, withIntermediateDirectories: false)
 
         // Native Foundation behavior: relativeTo is not reflected in absoluteString for these relative filePath inputs.
         let inferredDirectoryURL = URL(filePath: "docs/", directoryHint: .inferFromPath, relativeTo: baseDirectoryURL)
@@ -551,20 +557,20 @@ class TestURL : XCTestCase {
         XCTAssertEqual(explicitDirectoryURL.path, "\(TestURL.gBaseTemporaryDirectoryPath)/docs")
         XCTAssertEqual(explicitDirectoryURL.absoluteString, "file://\(TestURL.gBaseTemporaryDirectoryPath)/docs/")
 
-        let missingNoSlash = URL(filePath: TestURL.gFileDoesNotExistPath, directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
+        let missingNoSlash = URL(filePath: fileDoesNotExistPath, directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
         XCTAssertFalse(missingNoSlash.hasDirectoryPath)
-        XCTAssertEqual(missingNoSlash.path, TestURL.gFileDoesNotExistPath)
-        XCTAssertEqual(missingNoSlash.absoluteString, "file://\(TestURL.gFileDoesNotExistPath)")
+        XCTAssertEqual(missingNoSlash.path, fileDoesNotExistPath)
+        XCTAssertEqual(missingNoSlash.absoluteString, "file://\(fileDoesNotExistPath)")
 
-        let missingWithSlash = URL(filePath: "\(TestURL.gFileDoesNotExistPath)/", directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
+        let missingWithSlash = URL(filePath: "\(fileDoesNotExistPath)/", directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
         XCTAssertTrue(missingWithSlash.hasDirectoryPath)
-        XCTAssertEqual(missingWithSlash.path, TestURL.gFileDoesNotExistPath)
-        XCTAssertEqual(missingWithSlash.absoluteString, "file://\(TestURL.gFileDoesNotExistPath)/")
+        XCTAssertEqual(missingWithSlash.path, fileDoesNotExistPath)
+        XCTAssertEqual(missingWithSlash.absoluteString, "file://\(fileDoesNotExistPath)/")
 
-        let existingFile = URL(filePath: TestURL.gFileExistsPath, directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
+        let existingFile = URL(filePath: fileExistsPath, directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
         XCTAssertFalse(existingFile.hasDirectoryPath)
-        XCTAssertEqual(existingFile.path, TestURL.gFileExistsPath)
-        XCTAssertEqual(existingFile.absoluteString, "file://\(TestURL.gFileExistsPath)")
+        XCTAssertEqual(existingFile.path, fileExistsPath)
+        XCTAssertEqual(existingFile.absoluteString, "file://\(fileExistsPath)")
 
         let escapedName = "foo bar (final) (final2).pdf"
         let escapedPath = "\(TestURL.gBaseTemporaryDirectoryPath)/\(escapedName)"
@@ -573,20 +579,20 @@ class TestURL : XCTestCase {
         XCTAssertEqual(escapedFile.path, escapedPath)
         XCTAssertEqual(escapedFile.absoluteString, "file://\(TestURL.gBaseTemporaryDirectoryPath)/foo%20bar%20(final)%20(final2).pdf")
 
-        let existingFileWithSlash = URL(filePath: "\(TestURL.gFileExistsPath)/", directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
+        let existingFileWithSlash = URL(filePath: "\(fileExistsPath)/", directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
         XCTAssertTrue(existingFileWithSlash.hasDirectoryPath)
-        XCTAssertEqual(existingFileWithSlash.path, TestURL.gFileExistsPath)
-        XCTAssertEqual(existingFileWithSlash.absoluteString, "file://\(TestURL.gFileExistsPath)/")
+        XCTAssertEqual(existingFileWithSlash.path, fileExistsPath)
+        XCTAssertEqual(existingFileWithSlash.absoluteString, "file://\(fileExistsPath)/")
 
-        let existingDirectory = URL(filePath: TestURL.gDirectoryExistsPath, directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
+        let existingDirectory = URL(filePath: directoryExistsPath, directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
         XCTAssertTrue(existingDirectory.hasDirectoryPath)
-        XCTAssertEqual(existingDirectory.path, TestURL.gDirectoryExistsPath)
-        XCTAssertEqual(existingDirectory.absoluteString, "file://\(TestURL.gDirectoryExistsPath)/")
+        XCTAssertEqual(existingDirectory.path, directoryExistsPath)
+        XCTAssertEqual(existingDirectory.absoluteString, "file://\(directoryExistsPath)/")
 
-        let existingDirectoryWithSlash = URL(filePath: "\(TestURL.gDirectoryExistsPath)/", directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
+        let existingDirectoryWithSlash = URL(filePath: "\(directoryExistsPath)/", directoryHint: .checkFileSystem, relativeTo: baseDirectoryURL)
         XCTAssertTrue(existingDirectoryWithSlash.hasDirectoryPath)
-        XCTAssertEqual(existingDirectoryWithSlash.path, TestURL.gDirectoryExistsPath)
-        XCTAssertEqual(existingDirectoryWithSlash.absoluteString, "file://\(TestURL.gDirectoryExistsPath)/")
+        XCTAssertEqual(existingDirectoryWithSlash.path, directoryExistsPath)
+        XCTAssertEqual(existingDirectoryWithSlash.absoluteString, "file://\(directoryExistsPath)/")
     }
 
     func test_URLByResolvingSymlinksInPathShouldRemoveDuplicatedPathSeparators() {

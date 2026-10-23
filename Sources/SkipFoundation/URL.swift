@@ -16,7 +16,6 @@
 
 #if SKIP
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 
 public typealias NSURL = URL
@@ -184,7 +183,7 @@ public struct URL : Hashable, CustomStringConvertible, Codable, KotlinConverting
                 return true
             }
 
-            let pathToCheck: Path
+            let pathToCheck: java.nio.file.Path
             if Paths.get(path).isAbsolute() {
                 pathToCheck = Paths.get(path)
             } else if let base = base, base.isFileURL {
